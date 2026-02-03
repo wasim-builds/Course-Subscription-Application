@@ -34,6 +34,11 @@ const paymentSchema = new mongoose.Schema({
     cardLast4: {
         type: String
     },
+    failureCode: {
+        type: String,
+        enum: ['CARD_DECLINED', 'INSUFFICIENT_FUNDS', 'EXPIRED_CARD', 'INCORRECT_CVV', 'PROCESSING_ERROR', 'LOST_CARD', 'INVALID_CARD', null],
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now

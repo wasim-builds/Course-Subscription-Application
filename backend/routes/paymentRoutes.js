@@ -6,12 +6,22 @@ import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Demo card numbers that always succeed
-const VALID_DEMO_CARDS = [
-    '4111111111111111', // Visa
-    '5555555555554444', // Mastercard
-    '378282246310005',  // Amex
-];
+// Demo card scenarios
+const DEMO_CARDS = {
+    // Cards that always succeed
+    SUCCESS: [
+        '4111111111111111', // Visa - Success
+        '5555555555554444', // Mastercard - Success
+        '378282246310005',  // Amex - Success
+    ],
+    // Cards that simulate failures
+    DECLINED: '4000000000000002',           // Card declined
+    INSUFFICIENT_FUNDS: '4000000000009995', // Insufficient funds
+    EXPIRED_CARD: '4000000000000069',       // Expired card
+    INCORRECT_CVV: '4000000000000127',      // Incorrect CVV
+    PROCESSING_ERROR: '4000000000000119',   // Processing error
+    LOST_CARD: '4000000000009987',          // Lost card
+};
 
 // Generate unique transaction ID
 const generateTransactionId = () => {
@@ -123,22 +133,52 @@ router.post('/verify', authMiddleware, async (req, res) => {
             });
         }
 
-        // Validate demo card number
-        const isValidCard = VALID_DEMO_CARDS.includes(cardNumber.replace(/\s/g, ''));
-
-        if (!isValidCard) {
-            // Mark payment as failed
-            payment.status = 'failed';
-            await payment.save();
-
-            return res.status(400).json({
-                success: false,
-                message: 'Payment failed. Invalid card number. Use demo card: 4111111111111111'
-            });
+        // Validate demo card number and determine scenario
+        const cleanCardNumber = cardNumber.replace(/\s/g, '');
+        const isSuccessCard = DEMO_CARDS.SUCCESS.includes(cleanCardNumber);
+        
+        // Check for specific failure scenarios
+        let failureMessage = null;
+        let failureCode = null;
+        
+        if (cleanCardNumber === DEMO_CARDS.DECLINED) {
+            failureMessage = 'Card declined. Please use a different card.';
+            failureCode = 'CARD_DECLINED';
+        } else if (cleanCardNumber === DEMO_CARDS.INSUFFICIENT_FUNDS) {
+            failureMessage = 'Insufficient funds. Please use a card with adequate balance.';
+            failureCode = 'INSUFFICIENT_FUNDS';
+        } else if (cleanCardNumber === DEMO_CARDS.EXPIRED_CARD) {
+            failureMessage = 'Card has expired. Please use a valid card.';
+            failureCode = 'EXPIRED_CARD';
+        } else if (cleanCardNumber === DEMO_CARDS.INCORRECT_CVV) {
+            failureMessage = 'Incorrect CVV. Please check your card details.';
+            failureCode = 'INCORRECT_CVV';
+        } else if (cleanCardNumber === DEMO_CARDS.PROCESSING_ERROR) {
+            failureMessage = 'Payment processing error. Please try again later.';
+            failureCode = 'PROCESSING_ERROR';
+        } else if (cleanCardNumber === DEMO_CARDS.LOST_CARD) {
+            failureMessage = 'This card has been reported lost. Please use a different card.';
+            failureCode = 'LOST_CARD';
+        } else if (!isSuccessCard) {
+            failureMessage = 'Invalid card number. Use demo card: 4111 1111 1111 1111';
+            failureCode = 'INVALID_CARD';
         }
 
         // Simulate payment processing delay
         await new Promise(resolve => setTimeout(resolve, 1500));
+
+        if (failureMessage) {
+            // Mark payment as failed
+            payment.status = 'failed';
+            payment.failureCode = failureCode;
+            await payment.save();
+
+            return res.status(400).json({
+                success: false,
+                message: failureMessage,
+                errorCode: failureCode
+            });
+        }
 
         // Mark payment as successful
         payment.status = 'success';

@@ -147,15 +147,21 @@ const PaymentModal = ({ isOpen, onClose, course, finalPrice, promoCode, onSucces
                     <p className="text-sm text-primary-400 mb-2">
                         💳 <strong>Demo Payment Mode</strong>
                     </p>
-                    <p className="text-xs text-gray-300 mb-2">
-                        Use demo card: <code className="bg-dark-700 px-2 py-1 rounded">4111 1111 1111 1111</code>
-                    </p>
+                    <div className="text-xs text-gray-300 space-y-1 mb-2">
+                        <p className="font-medium text-gray-200">Test Cards:</p>
+                        <div className="grid grid-cols-1 gap-1">
+                            <span className="flex justify-between"><code className="bg-dark-700 px-1 rounded">4111 1111 1111 1111</code> <span className="text-green-400">✓ Success</span></span>
+                            <span className="flex justify-between"><code className="bg-dark-700 px-1 rounded">4000 0000 0000 0002</code> <span className="text-red-400">✗ Declined</span></span>
+                            <span className="flex justify-between"><code className="bg-dark-700 px-1 rounded">4000 0000 0000 9995</code> <span className="text-red-400">✗ Insufficient Funds</span></span>
+                            <span className="flex justify-between"><code className="bg-dark-700 px-1 rounded">4000 0000 0000 0069</code> <span className="text-red-400">✗ Expired</span></span>
+                        </div>
+                    </div>
                     <button
                         type="button"
                         onClick={useDemoCard}
                         className="text-xs text-primary-400 hover:text-primary-300 underline"
                     >
-                        Click to auto-fill demo card
+                        Click to auto-fill success card
                     </button>
                 </div>
 

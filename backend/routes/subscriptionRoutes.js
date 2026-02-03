@@ -12,7 +12,7 @@ const PROMO_DISCOUNT = 0.5; // 50% discount
 // @route   POST /api/subscribe
 // @desc    Subscribe to a course
 // @access  Private
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/subscribe', authMiddleware, async (req, res) => {
     try {
         const { courseId, promoCode } = req.body;
         const userId = req.userId;
