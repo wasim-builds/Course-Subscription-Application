@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import PaymentModal from '../components/PaymentModal';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ const CourseDetail = () => {
     const [promoCode, setPromoCode] = useState('');
     const [promoApplied, setPromoApplied] = useState(false);
     const [discountedPrice, setDiscountedPrice] = useState(0);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     useEffect(() => {
         fetchCourse();
@@ -45,30 +47,41 @@ const CourseDetail = () => {
     };
 
     const handleSubscribe = async () => {
-        // For paid courses, ensure promo is applied
-        if (course.price > 0 && !promoApplied) {
-            toast.error('Please apply a valid promo code for paid courses');
+        // For paid courses, open payment modal
+        if (course.price > 0) {
+            if (!promoApplied) {
+                toast.error('Please apply a valid promo code for paid courses');
+                return;
+            }
+            setShowPaymentModal(true);
             return;
         }
 
+        // For free courses, directly subscribe
         setSubscribing(true);
         try {
             const response = await api.post('/subscribe', {
                 courseId: course._id,
-                promoCode: course.price > 0 ? promoCode : undefined,
             });
 
             if (response.data.success) {
-                toast.success('Successfully subscribed to the course! 🎉');
+                toast.success('Successfully enrolled in the course! 🎉');
                 setTimeout(() => {
                     navigate('/my-courses');
                 }, 1500);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Subscription failed');
+            toast.error(error.response?.data?.message || 'Enrollment failed');
         } finally {
             setSubscribing(false);
         }
+    };
+
+    const handlePaymentSuccess = (subscription) => {
+        // Navigate to My Courses after successful payment
+        setTimeout(() => {
+            navigate('/my-courses');
+        }, 1500);
     };
 
     if (loading) {
@@ -206,7 +219,7 @@ const CourseDetail = () => {
                             disabled={subscribing || (!isFree && !promoApplied)}
                             className="w-full btn-primary text-lg py-3"
                         >
-                            {subscribing ? 'Subscribing...' : isFree ? 'Enroll Now' : 'Subscribe Now'}
+                            {subscribing ? 'Processing...' : isFree ? 'Enroll Now' : 'Proceed to Payment'}
                         </button>
 
                         {!isFree && !promoApplied && (
@@ -217,6 +230,16 @@ const CourseDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                course={course}
+                finalPrice={discountedPrice || course.price}
+                promoCode={promoCode}
+                onSuccess={handlePaymentSuccess}
+            />
         </>
     );
 };

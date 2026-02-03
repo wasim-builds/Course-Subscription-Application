@@ -1,16 +1,25 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CourseCard from '../components/CourseCard';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [enrolledCourseIds, setEnrolledCourseIds] = useState(new Set());
+    const [enrollingCourseId, setEnrollingCourseId] = useState(null);
+    const { user } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchCourses();
-    }, []);
+        if (user) {
+            fetchEnrolledCourses();
+        }
+    }, [user]);
 
     const fetchCourses = async () => {
         try {
@@ -22,6 +31,49 @@ const Home = () => {
             toast.error('Failed to fetch courses');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchEnrolledCourses = async () => {
+        try {
+            const response = await api.get('/my-courses');
+            if (response.data.success) {
+                const enrolledIds = new Set(
+                    response.data.subscriptions.map(sub => sub.courseId._id)
+                );
+                setEnrolledCourseIds(enrolledIds);
+            }
+        } catch (error) {
+            // Silently fail - user might not have any courses
+            console.error('Failed to fetch enrolled courses:', error);
+        }
+    };
+
+    const handleEnroll = async (courseId) => {
+        // Check if user is authenticated
+        if (!user) {
+            toast.error('Please login to enroll in courses');
+            navigate('/login');
+            return;
+        }
+
+        setEnrollingCourseId(courseId);
+
+        try {
+            const response = await api.post('/subscribe', { courseId });
+
+            if (response.data.success) {
+                const course = courses.find(c => c._id === courseId);
+                toast.success(`Successfully enrolled in ${course?.title || 'course'}!`);
+
+                // Update enrolled courses
+                setEnrolledCourseIds(prev => new Set([...prev, courseId]));
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || 'Failed to enroll in course';
+            toast.error(message);
+        } finally {
+            setEnrollingCourseId(null);
         }
     };
 
@@ -85,7 +137,13 @@ const Home = () => {
                                 {courses
                                     .filter(c => c.price === 0)
                                     .map((course) => (
-                                        <CourseCard key={course._id} course={course} />
+                                        <CourseCard
+                                            key={course._id}
+                                            course={course}
+                                            onEnroll={handleEnroll}
+                                            isEnrolled={enrolledCourseIds.has(course._id)}
+                                            enrolling={enrollingCourseId === course._id}
+                                        />
                                     ))}
                             </div>
                         )}

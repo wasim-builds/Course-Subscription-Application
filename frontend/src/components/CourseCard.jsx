@@ -1,7 +1,66 @@
 import { Link } from 'react-router-dom';
 
-const CourseCard = ({ course, showSubscriptionInfo = false, subscription = null }) => {
+const CourseCard = ({
+    course,
+    showSubscriptionInfo = false,
+    subscription = null,
+    onEnroll = null,
+    isEnrolled = false,
+    enrolling = false
+}) => {
     const isFree = course.price === 0;
+
+    const handleEnrollClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onEnroll && !isEnrolled && !enrolling) {
+            onEnroll(course._id);
+        }
+    };
+
+    const renderButton = () => {
+        if (showSubscriptionInfo) {
+            return null;
+        }
+
+        // Free courses with enrollment functionality
+        if (isFree && onEnroll) {
+            if (isEnrolled) {
+                return (
+                    <button
+                        className="w-full bg-gray-600 text-gray-300 py-2 px-4 rounded-lg text-sm font-semibold cursor-not-allowed"
+                        disabled
+                    >
+                        ✓ Already Enrolled
+                    </button>
+                );
+            }
+
+            return (
+                <button
+                    onClick={handleEnrollClick}
+                    disabled={enrolling}
+                    className="w-full btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {enrolling ? (
+                        <span className="flex items-center justify-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                            Enrolling...
+                        </span>
+                    ) : (
+                        '🎓 Enroll Now'
+                    )}
+                </button>
+            );
+        }
+
+        // Default: View Details button
+        return (
+            <button className="w-full btn-primary text-sm">
+                View Details →
+            </button>
+        );
+    };
 
     return (
         <Link to={`/courses/${course._id}`} className="block">
@@ -56,9 +115,7 @@ const CourseCard = ({ course, showSubscriptionInfo = false, subscription = null 
 
                     {!showSubscriptionInfo && (
                         <div className="mt-4">
-                            <button className="w-full btn-primary text-sm">
-                                View Details →
-                            </button>
+                            {renderButton()}
                         </div>
                     )}
                 </div>
