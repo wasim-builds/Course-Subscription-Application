@@ -16,8 +16,8 @@
             "dest": "https://course-subscription-application.onrender.com/api/$1"
         },
         {
-            "src": "/(.*)",
-            "dest": "/frontend/$1"
+            "src": "/[^.]+",
+            "dest": "/index.html"
         }
     ],
     "env": {
