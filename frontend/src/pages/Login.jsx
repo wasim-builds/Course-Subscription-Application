@@ -56,7 +56,12 @@ const Login = () => {
                 navigate('/');
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed');
+            console.error('Login Error:', error);
+            if (error.message === 'Network Error') {
+                toast.error('Unable to connect to server. Please check your internet or try again later.');
+            } else {
+                toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
+            }
         } finally {
             setLoading(false);
         }
