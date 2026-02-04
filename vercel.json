@@ -21,11 +21,11 @@
         }
     ],
     "env": {
-        "VITE_API_URL": "https://course-subscription-application.onrender.com"
+        "VITE_API_URL": "https://course-subscription-application.onrender.com/api"
     },
     "build": {
         "env": {
-            "VITE_API_URL": "https://course-subscription-application.onrender.com"
+            "VITE_API_URL": "https://course-subscription-application.onrender.com/api"
         }
     }
 }
